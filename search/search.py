@@ -16,7 +16,7 @@
 In search.py, you will implement generic search algorithms which are called by
 Pacman agents (in searchAgents.py).
 """
-
+from game import Directions
 import util
 
 class SearchProblem:
@@ -191,7 +191,30 @@ def nullHeuristic(state, problem=None):
 def aStarSearch(problem, heuristic=nullHeuristic):
     """Search the node that has the lowest combined cost and heuristic first."""
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    fringe = util.PriorityQueue()
+    closed = set()
+    path = [[problem.getStartState()]]
+    fringe.push(path, heuristic(problem.getStartState(), problem))
+
+    while not fringe.isEmpty():
+        p = fringe.pop()
+        node = p[-1]
+        nodePos = getPos(node)
+        if problem.isGoalState(nodePos):
+            return getPathLst(p)
+        if nodePos not in closed:
+            closed.add(nodePos)
+            successors = problem.getSuccessors(nodePos)
+            for successor in successors:
+                if getPos(successor) not in getAllPos(p):
+                    gn = getCost(p[-1]) + getCost(successor)
+                    hn = heuristic(getPos(successor), problem)
+                    fn = gn + hn
+                    tempP = p.copy()
+                    tempS = (getPos(successor), getDir(successor), gn)
+                    tempP.append(tempS)
+                    fringe.push(tempP, fn)
+    return []
 
 
 # Abbreviations
