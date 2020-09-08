@@ -84,7 +84,12 @@ def getDir(node):
     return node[1]
 
 def getCost(node):
+    if len(node) != 3:
+        return 0
     return node[2]
+
+def getAllPos(path):
+    return [getPos(p) for p in path]
 
 def depthFirstSearch(problem):
     """
@@ -120,7 +125,7 @@ def depthFirstSearch(problem):
             closed.add(nodePos)
             successors = problem.getSuccessors(nodePos)
             for successor in successors:
-                if successor not in p:
+                if getPos(successor) not in getAllPos(p):
                     tempP = p.copy()
                     tempP.append(successor)
                     fringe.push(tempP)
@@ -144,7 +149,7 @@ def breadthFirstSearch(problem):
             closed.add(nodePos)
             successors = problem.getSuccessors(nodePos)
             for successor in successors:
-                if successor not in p:
+                if getPos(successor) not in getAllPos(p):
                     tempP = p.copy()
                     tempP.append(successor)
                     fringe.push(tempP)
@@ -154,10 +159,10 @@ def breadthFirstSearch(problem):
 def uniformCostSearch(problem):
     """Search the node of least total cost first."""
     "*** YOUR CODE HERE ***"
-    fringe = util.Queue()
+    fringe = util.PriorityQueue()
     closed = set()
     path = [[problem.getStartState()]]
-    fringe.push(path)
+    fringe.push(path, 0)
 
     while not fringe.isEmpty():
         p = fringe.pop()
@@ -169,10 +174,11 @@ def uniformCostSearch(problem):
             closed.add(nodePos)
             successors = problem.getSuccessors(nodePos)
             for successor in successors:
-                if successor not in p:
+                if getPos(successor) not in getAllPos(p):
                     tempP = p.copy()
-                    tempP.append(successor)
-                    fringe.push(tempP)
+                    tempS = (getPos(successor), getDir(successor), getCost(p[-1]) + getCost(successor))
+                    tempP.append(tempS)
+                    fringe.push(tempP, getCost(tempS))
     return []
 
 def nullHeuristic(state, problem=None):
