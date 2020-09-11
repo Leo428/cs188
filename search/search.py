@@ -84,12 +84,53 @@ def getDir(node):
     return node[1]
 
 def getCost(node):
-    if len(node) != 3:
+    if len(node) < 3:
         return 0
     return node[2]
 
 def getAllPos(path):
     return [getPos(p) for p in path]
+
+def make_node(state, path = [], priority = 0):
+    return (state, path, priority)
+
+def getState(node):
+    return node[0]
+
+def getPath(node):
+    return node[1]
+
+def getPriority(node):
+    return node[2]
+
+def graphSearch(dataStruc, problem, heuristic=None, fn=None):
+    fringe = dataStruc
+    closed = []
+    startState = problem.getStartState()
+    if isinstance(fringe, util.Stack) or isinstance(fringe, util.Queue):
+        fringe.push(make_node(startState))
+    elif isinstance(fringe, util.PriorityQueue):
+        fringe.push(make_node(startState), 0)
+    while not fringe.isEmpty():
+        node = fringe.pop()
+        state = getState(node)
+        if problem.isGoalState(state):
+            return getPath(node)
+        if state not in closed:
+            closed.append(state)
+            successors = problem.getSuccessors(state)
+            for successor in successors:
+                succState = getState(successor)
+                if succState not in closed:
+                    if isinstance(fringe, util.Stack) or isinstance(fringe, util.Queue):
+                        fringe.push(make_node(succState, getPath(node) + [getDir(successor)]))
+                    elif isinstance(fringe, util.PriorityQueue):
+                        hVal =  heuristic(node, successor, problem, fn)
+                        fringe.push(make_node(succState,
+                            getPath(node) + [getDir(successor)],
+                            getPriority(node) + getPriority(successor)),
+                            hVal)
+    return []
 
 def depthFirstSearch(problem):
     """
@@ -106,80 +147,17 @@ def depthFirstSearch(problem):
     print("Start's successors:", problem.getSuccessors(problem.getStartState()))
     """
     "*** YOUR CODE HERE ***"
-    # print("Start:", problem.getStartState())
-    # print("Is the start a goal?", problem.isGoalState(problem.getStartState()))
-    # print("Start's successors:", problem.getSuccessors(problem.getStartState()))
-    # util.raiseNotDefined()
-    fringe = util.Stack()
-    closed = set()
-    path = [[problem.getStartState()]]
-    fringe.push(path)
-
-    while not fringe.isEmpty():
-        p = fringe.pop()
-        node = p[-1]
-        nodePos = getPos(node)
-        if problem.isGoalState(nodePos):
-            return getPathLst(p)
-        if nodePos not in closed:
-            closed.add(nodePos)
-            successors = problem.getSuccessors(nodePos)
-            for successor in successors:
-                if getPos(successor) not in getAllPos(p):
-                    tempP = p.copy()
-                    tempP.append(successor)
-                    fringe.push(tempP)
-    return []
-
-
+    return graphSearch(util.Stack(), problem)
 
 def breadthFirstSearch(problem):
-    fringe = util.Queue()
-    closed = set()
-    path = [[problem.getStartState()]]
-    fringe.push(path)
+    return graphSearch(util.Queue(), problem)
 
-    while not fringe.isEmpty():
-        p = fringe.pop()
-        node = p[-1]
-        nodePos = getPos(node)
-        if problem.isGoalState(nodePos):
-            return getPathLst(p)
-        if nodePos not in closed:
-            closed.add(nodePos)
-            successors = problem.getSuccessors(nodePos)
-            for successor in successors:
-                if getPos(successor) not in getAllPos(p):
-                    tempP = p.copy()
-                    tempP.append(successor)
-                    fringe.push(tempP)
-    return []
-    
+ucsHeuristic = lambda node, successor, problem=None, fn=None: getPriority(node) + getPriority(successor)
 
 def uniformCostSearch(problem):
     """Search the node of least total cost first."""
     "*** YOUR CODE HERE ***"
-    fringe = util.PriorityQueue()
-    closed = set()
-    path = [[problem.getStartState()]]
-    fringe.push(path, 0)
-
-    while not fringe.isEmpty():
-        p = fringe.pop()
-        node = p[-1]
-        nodePos = getPos(node)
-        if problem.isGoalState(nodePos):
-            return getPathLst(p)
-        if nodePos not in closed:
-            closed.add(nodePos)
-            successors = problem.getSuccessors(nodePos)
-            for successor in successors:
-                if getPos(successor) not in getAllPos(p):
-                    tempP = p.copy()
-                    tempS = (getPos(successor), getDir(successor), getCost(p[-1]) + getCost(successor))
-                    tempP.append(tempS)
-                    fringe.push(tempP, getCost(tempS))
-    return []
+    return graphSearch(util.PriorityQueue(), problem, ucsHeuristic)
 
 def nullHeuristic(state, problem=None):
     """
@@ -188,34 +166,12 @@ def nullHeuristic(state, problem=None):
     """
     return 0
 
+aStarHeuristic = lambda node, successor, problem, fn: getPriority(node) + getPriority(successor) + fn(getState(successor), problem)
+
 def aStarSearch(problem, heuristic=nullHeuristic):
     """Search the node that has the lowest combined cost and heuristic first."""
     "*** YOUR CODE HERE ***"
-    fringe = util.PriorityQueue()
-    closed = set()
-    path = [[problem.getStartState()]]
-    fringe.push(path, heuristic(problem.getStartState(), problem))
-
-    while not fringe.isEmpty():
-        p = fringe.pop()
-        node = p[-1]
-        nodePos = getPos(node)
-        if problem.isGoalState(nodePos):
-            return getPathLst(p)
-        if nodePos not in closed:
-            closed.add(nodePos)
-            successors = problem.getSuccessors(nodePos)
-            for successor in successors:
-                if getPos(successor) not in getAllPos(p):
-                    gn = getCost(p[-1]) + getCost(successor)
-                    hn = heuristic(getPos(successor), problem)
-                    fn = gn + hn
-                    tempP = p.copy()
-                    tempS = (getPos(successor), getDir(successor), gn)
-                    tempP.append(tempS)
-                    fringe.push(tempP, fn)
-    return []
-
+    return graphSearch(util.PriorityQueue(), problem, aStarHeuristic, heuristic)
 
 # Abbreviations
 bfs = breadthFirstSearch
