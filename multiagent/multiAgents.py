@@ -296,7 +296,38 @@ def betterEvaluationFunction(currentGameState):
     DESCRIPTION: <write something here so we know what you did>
     """
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    
+    # Useful information you can extract from a GameState (pacman.py)
+    pos = currentGameState.getPacmanPosition()
+    food = currentGameState.getFood()
+    ghostStates = currentGameState.getGhostStates()
+    # scaredTimes = [ghostState.scaredTimer for ghostState in ghostStates]
+    danger_pos = []
+    hunting_pos = []
+    for ghost in ghostStates:
+        if ghost.scaredTimer == 0:
+            danger_pos.append(ghost.getPosition())
+        else:
+            hunting_pos.append((ghost.getPosition(), manhattanDistance(ghost.getPosition(), pos), ghost.scaredTimer))
+    danger_dis = list(map(lambda p: manhattanDistance(p, pos), danger_pos))
+    min_danger_dis = min(danger_dis) if len(danger_dis) else 0
+    hunt_score = 0
+    for prey, dis, scared_time in hunting_pos:
+        if dis == 0:
+            hunt_score += 50000
+        else:
+            hunt_score += 1500 * abs(dis-scared_time)
+
+    food_dis = list(map(lambda p: manhattanDistance(p, pos), food.asList()))
+    min_food_dis = min(food_dis) if len(food_dis) else 0
+    # food_left = currentGameState.getNumFood()
+    food_score = - min_food_dis #100*(food_left) - min_food_dis #- 20 * food_left
+
+    if min_danger_dis >= 2:
+        return 10000 + food_score + currentGameState.getScore() + hunt_score
+    if min_danger_dis <= 1:
+        return -10000 + hunt_score
+    return currentGameState.getScore() - min_danger_dis + food_score + hunt_score
 
 # Abbreviation
 better = betterEvaluationFunction
